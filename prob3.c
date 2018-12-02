@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
-
-#define MAX_LINE_WORDS 100
+#include <stdlib.h>
 
 // Instructions
 // 1. Opens the file named as the command-line argument for reading
@@ -36,7 +35,10 @@ int main(int argc, char ** argv)
     }
     // 3. Forks a child process that calls unlink() to delete the file
     if (fork() == 0)
+    {
         unlink(argv[1]);
+        exit(0);
+    }
     else
         wait(NULL); // 4. Waits on the child process
 
@@ -45,7 +47,7 @@ int main(int argc, char ** argv)
         printf("Unable to read from file: %s\n", argv[1]);
     else
         printf("Able to read from file: %s\n", argv[1]);
-
+    
     fclose(file);
     return 0;
 }

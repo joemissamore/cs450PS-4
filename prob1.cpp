@@ -60,16 +60,14 @@ int main(int argc, char ** argv)
     }
 
     int physicalAddress = (hexVal | insertIntoPhysicalAddress);
-    // cout << bitset<15>(physicalAddress) << endl;
-    if (fileInfo[indexVirt * 4] == 0)
-        cout << "SEGFAULT" << endl;
+    
     // When pages are not in physical memory but have a permission bit set to 1, print DISK.
-    // else if (fileInfo[indexVirt * 4 + 1] == 0 && pages are not in physical memory???)
-    //     report an err
+    if (fileInfo[indexVirt * 4] == 0 && fileInfo[indexVirt * 4 + 1] == 1)
+        cout << "DISK" << endl;
+    else if (fileInfo[indexVirt * 4] == 0)
+        cout << "SEGFAULT" << endl;
     else
         printf("0x%X\n", physicalAddress);
-
-
 
 
     file.close();

@@ -8,3 +8,6 @@ runProb3 : prob3.o
 	> prob3.test
 	./prob3.o prob3.test
 	./fileexists.sh
+
+clean:
+	rm -f *.o
