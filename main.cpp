@@ -28,6 +28,11 @@ int main(int argc, char ** argv)
         addressInfo[i] = temp;
     }
     
+    /* Valid?
+     * Permission (1 bit)
+     * Physical page number
+     * Use bit (see Problem 2) */
+
     while (file >> temp)
         fileInfo.push_back(temp);
 
@@ -41,7 +46,7 @@ int main(int argc, char ** argv)
         exit(1);
     }
     // cout << "moveIndex: " << moveIndex << endl;
-    // cout << "Enter hex address: ";
+    cout << "Enter hex address: ";
     cin >> hex >> hexVal;
     
     int indexVirt = (hexVal >> moveIndex);
@@ -55,8 +60,14 @@ int main(int argc, char ** argv)
     }
 
     int physicalAddress = (hexVal | insertIntoPhysicalAddress);
-    cout << bitset<15>(physicalAddress) << endl;
-    printf("0x%X\n", physicalAddress);
+    // cout << bitset<15>(physicalAddress) << endl;
+    if (fileInfo[indexVirt * 4] == 0)
+        cout << "SEGFAULT" << endl;
+    // When pages are not in physical memory but have a permission bit set to 1, print DISK.
+    // else if (fileInfo[indexVirt * 4 + 1] == 0 && pages are not in physical memory???)
+    //     report an err
+    else
+        printf("0x%X\n", physicalAddress);
 
 
 
