@@ -1,13 +1,16 @@
-prob1.o : prob1.cpp
-	g++ -g prob1.cpp -o prob1.o
+p1.x : prob1_2.cpp
+	g++ -g -D PROB1 prob1_2.cpp -o p1.x
 
-prob3.o : prob3.c
-	gcc -g prob3.c -o prob3.o
+p2.x: prob1_2.cpp
+	g++ -g prob1_2.cpp -o p2.x
 
-runProb3 : prob3.o
+p3.x : prob3.c
+	gcc -g prob3.c -o p3.x
+
+runProb3 : p3.x
 	> prob3.test
-	./prob3.o prob3.test
+	./p3.x prob3.test
 	./fileexists.sh
 
 clean:
-	rm -f *.o
+	rm -f *.x *.o
