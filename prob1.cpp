@@ -50,11 +50,6 @@ int main(int argc, char ** argv)
             virtualPageInfo.numByesInPage = temp;
     }
     
-    /* Valid?
-     * Permission (1 bit)
-     * Physical page number
-     * Use bit (see Problem 2) */
-
     int numOfVirtualPages = 0; // 4
     while (file >> temp)
     {
@@ -96,7 +91,8 @@ int main(int argc, char ** argv)
     /* ppn = 6 */
 
     int insertIntoPhysicalAddress = (ppn << moveIndex);
-    /* insertIntoPhysicalAddress = 192 = 11000000 
+    /* insertIntoPhysicalAddress = 192 = 11000000
+     * all we care about are the first 3 bits = 110
      * 8 bits */ 
 
     /* Zero's out bits 
@@ -107,7 +103,10 @@ int main(int argc, char ** argv)
     {
         hexVal &= ~(1 << n);
     }
-    /* hexVal = 10 = 0001010 */
+    /* hexVal = 10 = 0001010 
+     * these first three bits
+     * will be masked with the
+     * first 3 bits of insertIntoPhysicalAddress */
 
     int physicalAddress = (hexVal | insertIntoPhysicalAddress);
     /* physicalAddress = 202 = 11001010 = 0xCA
@@ -119,18 +118,26 @@ int main(int argc, char ** argv)
         #ifdef PROB1
         cout << "DISK" << endl;
         #else
-        int i = 0;
-        // int usedBit = ((indexVirt + i) % bitIndex) * bitIndex + 3;
-        // while(fileInfo[usedBit] == 1)
-        // {
-        //     fileInfo[usedBit] = 0;
-        //     cout << "executed" << endl;
-        //     cout << fileInfo[usedBit - 3] << endl;
-        //     cout << fileInfo[usedBit - 2] << endl;
-        //     cout << fileInfo[usedBit - 1] << endl;
-        //     cout << fileInfo[usedBit] << endl;
-        //     i++;
-        // }
+
+        /* CLOCK ALGO */ 
+        for (int i = 0; 1; i++)
+        {
+            if (virtualPages[i].valid == 0
+                && virtualPages[i].permission == 1
+                && virtualPages[i].useBit == 0)
+            {
+                virtualPages[i].valid = 1;
+                virtualPages[i].useBit = 1;
+                cout << "PAGE FAULT"<< endl;
+                printf("0x%X\n", physicalAddress);
+                break;
+            }
+            else 
+                virtualPages[i].useBit = 0;
+
+            if (i == numOfVirtualPages - 1)
+                i = 0;
+        }
         #endif
 
     }
