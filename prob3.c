@@ -9,6 +9,11 @@
 // 4. Waits on the child process
 // 5. Tries to read the now-deleted file
 
+/* When the child process deletes the file the parent and child are
+ * still able to read from the file. This is because unlink() has
+ * successfully deleted the dentry, but both processes are still 
+ * pointing to the inode. */
+
 int main(int argc, char ** argv)
 {
     if (argc < 2)
@@ -37,7 +42,6 @@ int main(int argc, char ** argv)
     if (fork() == 0)
     {
         unlink(argv[1]);
-        exit(0);
     }
     else
         wait(NULL); // 4. Waits on the child process
