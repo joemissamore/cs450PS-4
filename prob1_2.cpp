@@ -47,14 +47,14 @@ void PrintVector(vector<VirtualPage> v)
 }
 
 
-int CalculatePhysicalAddress(int ppn, int moveIndex, int hexVal, const VirtualPageInfo &virtualPageInfo)
+unsigned long long CalculatePhysicalAddress(int ppn, int moveIndex, int hexVal, const VirtualPageInfo &virtualPageInfo)
 {
     /* Calculates the index for looking up in the virtual page table */ 
     // int bitIndex = virtualPageInfo.numBitsPhysAdd - virtualPageInfo.numBitsVirtAdd + 1; // 2
     // int shift = virtualPageInfo.numBitsVirtAdd - bitIndex; // 5
 
-    int tagBits = virtualPageInfo.numBitsVirtAdd - moveIndex; // 3
-    int insertIntoPhysicalAddress = (ppn << moveIndex);
+    unsigned long long tagBits = virtualPageInfo.numBitsVirtAdd - moveIndex; // 3
+    unsigned long long insertIntoPhysicalAddress = (ppn << moveIndex);
     /* insertIntoPhysicalAddress = 192 = 11000000
      * all we care about are the first 3 bits = 110
      * 8 bits */ 
@@ -72,7 +72,7 @@ int CalculatePhysicalAddress(int ppn, int moveIndex, int hexVal, const VirtualPa
      * will be masked with the
      * first 3 bits of insertIntoPhysicalAddress */
 
-    int physicalAddress = (hexVal | insertIntoPhysicalAddress);
+    unsigned long long physicalAddress = (hexVal | insertIntoPhysicalAddress);
     /* physicalAddress = 202 = 11001010 = 0xCA
      * 8 bits */
     return physicalAddress;
@@ -156,7 +156,7 @@ int main(int argc, char ** argv)
 
     while (true)
     {
-        int hexVal = 0;
+        unsigned long long hexVal = 0;
         cout << ">>> ";
         cin >> hex >> hexVal;
         
@@ -164,7 +164,7 @@ int main(int argc, char ** argv)
         /* Gets the virtual index
         * hexVal = 0x4A = 1001010 
         * moveIndex = 5 = 101 */
-        int indexVirt = (hexVal >> moveIndex);
+        unsigned long long indexVirt = (hexVal >> moveIndex);
         /* indexVirt = 2 */
         // int ppn = virtualPages[indexVirt].ppn;
 
