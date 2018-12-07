@@ -3,7 +3,7 @@
 #include <vector>
 #include <bitset>
 #include <math.h>
-#define DEBUG 1
+#define DEBUG 0
 #define debug if (DEBUG) cout
 
 using namespace std;
@@ -21,6 +21,14 @@ struct VirtualPageInfo
     int numBitsVirtAdd;
     int numBitsPhysAdd;
     int numByesInPage;
+};
+
+struct VirtToPhys
+{
+    /* useBit | virtualAddress | -> | physicalAddress */
+    int useBit;
+    int virtualAddress;
+    int physicalAddress;
 };
 
 void PrintVector(vector<VirtualPage> v)
@@ -55,7 +63,7 @@ int CalculatePhysicalAddress(int ppn, int moveIndex, int hexVal, const VirtualPa
      * zero's out the first 2 
      * bits in the entered hex 
      * value. */
-    for (int n = moveIndex + 1; n < virtualPageInfo.numBitsVirtAdd - 1; n++)
+    for (int n = moveIndex + 1; n < virtualPageInfo.numBitsVirtAdd; n++)
     {
         hexVal &= ~(1 << n);
     }
@@ -116,6 +124,21 @@ int main(int argc, char ** argv)
     }
     file.close();
 
+    vector<VirtToPhys> virtToPhysMap; 
+
+    for (int i = 0; i < virtualPages.size(); i++)
+    {
+        if (virtualPages[i].valid && virtualPages[i].permission)
+        {
+            VirtToPhys vtp;
+            vtp.useBit = virtualPages[i].useBit;
+            vtp.physicalAddress = virtualPages[i].ppn;
+            vtp.virtualAddress = i;
+
+            virtToPhysMap.push_back(vtp);
+        }
+    }
+
 
     debug << "numOfVirtualPages: " << numOfVirtualPages << endl;
 
@@ -143,7 +166,7 @@ int main(int argc, char ** argv)
         * moveIndex = 5 = 101 */
         int indexVirt = (hexVal >> moveIndex);
         /* indexVirt = 2 */
-        int ppn = virtualPages[indexVirt].ppn;
+        // int ppn = virtualPages[indexVirt].ppn;
 
         bool segfault = false;
         bool disk = false;
@@ -160,45 +183,60 @@ int main(int argc, char ** argv)
             /* CLOCK ALGO */ 
             // debug << "executing clock ago..." << endl;
             // debug << "executing clock algo on idx: " << clockAlgo << endl;
+            VirtToPhys * virtToPhys;
             for (; ; clockAlgo++)
             {
-                if (clockAlgo > numOfVirtualPages)
+                virtToPhys = &virtToPhysMap[clockAlgo];
+                if (clockAlgo > virtToPhysMap.size() - 1)
                 {
                     debug << "setting clockAlgo to 0" << endl;
                     clockAlgo = 0;
                 }   
 
-                if (virtualPages[clockAlgo].permission == 1
-                    && virtualPages[clockAlgo].useBit == 0)
+                if (virtToPhysMap[clockAlgo].useBit == 0)
                 {
                     debug << "executing clock algo on idx: " << clockAlgo << endl;
-                    /* Map to DISK */
-                    virtualPages[clockAlgo].valid = 0;
-                    virtualPages[clockAlgo].useBit = 0;
 
-                    /* Set virtual page table index */
-                    virtualPages[indexVirt].ppn = virtualPages[clockAlgo].ppn;
+                    /* set original virtual address bits to: */
+                    virtualPages[virtToPhys->virtualAddress].valid = 0;
+                    virtualPages[virtToPhys->virtualAddress].useBit = 0;
+                    virtualPages[virtToPhys->virtualAddress].ppn = 0;
+
+                    /* Mark the page as used */
+                    virtToPhys->useBit = 1;
+
+                    /* Change virtual page number */
+                    virtToPhys->virtualAddress = indexVirt;
+                    /* Set virtual page table ppn */
+                    virtualPages[indexVirt].ppn = virtToPhys->physicalAddress;
                     /* Validate the virtual page table entry */
                     virtualPages[indexVirt].valid = 1;
                     /* Just in case permissions was previously set to 0,
                     * now we have permission to access ppn. */
                     virtualPages[indexVirt].permission = 1;
                     virtualPages[indexVirt].useBit = 1;
+
                     break;
                 }
-                else 
-                    virtualPages[clockAlgo].useBit = 0;
+                else
+                {
+                    virtToPhysMap[clockAlgo].useBit = 0;
+                    virtualPages[virtToPhys->virtualAddress].useBit = 0;
+                } 
+                    
             }
-            debug << "clock algo position (right after for loop): " << clockAlgo << endl;
 
             /* After the clock algo finishes, we must advance its position. 
             * If the clock algo is at the last position move its position
             * to the first element. */
-            if (clockAlgo == numOfVirtualPages - 1)    
+            if (clockAlgo == virtToPhysMap.size() - 1)    
                 clockAlgo = 0;
             else
                 clockAlgo++;
+
+            debug << "clock algo position (right after for loop): " << clockAlgo << endl;
             #endif
+
 
         }
         else if (virtualPages[indexVirt].permission == 0)
@@ -215,13 +253,19 @@ int main(int argc, char ** argv)
         else if (disk)
         {
             cout << "PAGE FAULT" << endl;
-            printf("0x%X\n", CalculatePhysicalAddress(ppn, moveIndex, hexVal, virtualPageInfo));
+            printf("0x%X\n", CalculatePhysicalAddress(virtualPages[indexVirt].ppn, moveIndex, hexVal, virtualPageInfo));
         }
     #endif
         else
         {
-            printf("0x%X\n", CalculatePhysicalAddress(ppn, moveIndex, hexVal, virtualPageInfo));
+            printf("0x%X\n", CalculatePhysicalAddress(virtualPages[indexVirt].ppn, moveIndex, hexVal, virtualPageInfo));
             virtualPages[indexVirt].useBit = 1;
+            for (int i = 0; i < virtToPhysMap.size(); i++)
+            {
+                if (virtToPhysMap[i].virtualAddress == indexVirt)
+                    virtToPhysMap[i].useBit = 1;
+            }
+            
         }
 
         debug << endl << "Debugging Info: " << endl;
