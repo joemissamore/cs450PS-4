@@ -92,9 +92,6 @@ int main(int argc, char ** argv)
     vector <VirtualPage> virtualPages;
     ifstream file; 
     file.open(argv[1]);
-    /* [0] = # of bits in virtual address
-     * [1] = # of bits in physical address
-     * [2] = # of BYTES in a page */
 
     /* Get virtual page information */
     VirtualPageInfo virtualPageInfo;
@@ -106,7 +103,6 @@ int main(int argc, char ** argv)
     virtualPageInfo.numByesInPage = temp;
     
     /* Get virtual page information */ 
-    int numOfVirtualPages = 0; // 4
     while (file >> temp)
     {
         VirtualPage virtualPage;
@@ -119,11 +115,10 @@ int main(int argc, char ** argv)
         virtualPage.useBit = temp;
 
         virtualPages.push_back(virtualPage);
-
-        numOfVirtualPages++;
     }
     file.close();
 
+    /* The clock algo executes on this vector */
     vector<VirtToPhys> virtToPhysMap; 
 
     for (int i = 0; i < virtualPages.size(); i++)
@@ -139,13 +134,8 @@ int main(int argc, char ** argv)
         }
     }
 
-
-    debug << "numOfVirtualPages: " << numOfVirtualPages << endl;
-
-    int clockAlgo = 0;
-    int moveIndex = log2(virtualPageInfo.numByesInPage); // 5
+    int moveIndex = log2(virtualPageInfo.numByesInPage);
     double moveIndexCheck = log2(virtualPageInfo.numByesInPage);
-    /* ppn = 6 */
 
     /* Checking to make sure log2 returned an integer value */
     if (moveIndex != moveIndexCheck)
@@ -154,44 +144,39 @@ int main(int argc, char ** argv)
         exit(1);
     }
 
+    /* CLOCK ALGO position in 
+     * the VirtToPhysMap 'table' */
+    int clockAlgo = 0;
+
     while (true)
     {
         unsigned long long hexVal = 0;
         cout << ">>> ";
         cin >> hex >> hexVal;
-        
-        
-        /* Gets the virtual index
-        * hexVal = 0x4A = 1001010 
-        * moveIndex = 5 = 101 */
+                
+        /* Gets the virtual index */
         unsigned long long indexVirt = (hexVal >> moveIndex);
-        /* indexVirt = 2 */
-        // int ppn = virtualPages[indexVirt].ppn;
-
         bool segfault = false;
         bool disk = false;
 
-
-        // When pages are not in physical memory but have a permission bit set to 1, print DISK.
-        /* Get PPN value */
         if (virtualPages[indexVirt].valid == 0 && virtualPages[indexVirt].permission == 1)
         {
             #ifdef PROB1
             disk = true;
             #else
             disk = true;
+            
             /* CLOCK ALGO */ 
-            // debug << "executing clock ago..." << endl;
-            // debug << "executing clock algo on idx: " << clockAlgo << endl;
             VirtToPhys * virtToPhys;
             for (; ; clockAlgo++)
             {
-                virtToPhys = &virtToPhysMap[clockAlgo];
                 if (clockAlgo > virtToPhysMap.size() - 1)
                 {
                     debug << "setting clockAlgo to 0" << endl;
                     clockAlgo = 0;
                 }   
+
+                virtToPhys = &virtToPhysMap[clockAlgo];
 
                 if (virtToPhysMap[clockAlgo].useBit == 0)
                 {
@@ -200,7 +185,7 @@ int main(int argc, char ** argv)
                     /* set original virtual address bits to: */
                     virtualPages[virtToPhys->virtualAddress].valid = 0;
                     virtualPages[virtToPhys->virtualAddress].useBit = 0;
-                    virtualPages[virtToPhys->virtualAddress].ppn = 0;
+                    virtualPages[virtToPhys->virtualAddress].ppn = -1;
 
                     /* Mark the page as used */
                     virtToPhys->useBit = 1;
@@ -236,29 +221,25 @@ int main(int argc, char ** argv)
 
             debug << "clock algo position (right after for loop): " << clockAlgo << endl;
             #endif
-
-
         }
+
         else if (virtualPages[indexVirt].permission == 0)
             segfault = true;
 
         if (segfault)
-            cout << "SEGFAULT" << endl;
+            cout << "Physical Address: SEGFAULT" << endl;
     #ifdef PROB1
         else if (disk)
-        {
-            cout << "DISK" << endl;
-        }
+            cout << "Physical Address: DISK" << endl;
     #else
         else if (disk)
         {
-            cout << "PAGE FAULT" << endl;
-            printf("0x%X\n", CalculatePhysicalAddress(virtualPages[indexVirt].ppn, moveIndex, hexVal, virtualPageInfo));
+            printf("Physical Address (PAGE FAULT): 0x%X\n", CalculatePhysicalAddress(virtualPages[indexVirt].ppn, moveIndex, hexVal, virtualPageInfo));
         }
     #endif
         else
         {
-            printf("0x%X\n", CalculatePhysicalAddress(virtualPages[indexVirt].ppn, moveIndex, hexVal, virtualPageInfo));
+            printf("Physical Address: 0x%X\n", CalculatePhysicalAddress(virtualPages[indexVirt].ppn, moveIndex, hexVal, virtualPageInfo));
             virtualPages[indexVirt].useBit = 1;
             for (int i = 0; i < virtToPhysMap.size(); i++)
             {
